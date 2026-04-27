@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // התיקון: הוספנו את ה-waitUntil ישירות לקישור (URL)
+    // הכתובת שולחת את פקודת ההמתנה לטעינה מלאה
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
     const response = await fetch(url, {
@@ -21,6 +21,10 @@ export default async function handler(req, res) {
           format: "A4",
           printBackground: true,
           preferCSSPageSize: true,
+          displayHeaderFooter: false, // מבטל כותרות דפדפן מיותרות
+          metadata: {
+            title: "Liron Nahaisi Resume" // עוזר ל-PDF להיות "חכם" ולחיץ
+          },
           margin: { top: "0", right: "0", bottom: "0", left: "0" }
         }
       })
