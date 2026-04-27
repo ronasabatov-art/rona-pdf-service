@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // שולחים את פקודת ההמתנה ב-URL כדי שהגרפיקה תיטען
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
     const response = await fetch(url, {
@@ -28,17 +27,9 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || "Browserless execution failed");
+      throw new Error(errorText || "Execution failed");
     }
 
-    const pdf = await response.arrayBuffer();
-    res.setHeader("Content-Type", "application/pdf");
-    res.send(Buffer.from(pdf));
-
-  } catch (error) {
-    res.status(500).send("Server Error: " + error.message);
-  }
-}
     const pdf = await response.arrayBuffer();
     res.setHeader("Content-Type", "application/pdf");
     res.send(Buffer.from(pdf));
