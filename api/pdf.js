@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // הכתובת שולחת את פקודת ההמתנה לטעינה מלאה
+    // שולחים את פקודת ההמתנה ב-URL כדי שהגרפיקה תיטען
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
     const response = await fetch(url, {
@@ -21,10 +21,6 @@ export default async function handler(req, res) {
           format: "A4",
           printBackground: true,
           preferCSSPageSize: true,
-          displayHeaderFooter: false, // מבטל כותרות דפדפן מיותרות
-          metadata: {
-            title: "Liron Nahaisi Resume" // עוזר ל-PDF להיות "חכם" ולחיץ
-          },
           margin: { top: "0", right: "0", bottom: "0", left: "0" }
         }
       })
@@ -35,6 +31,14 @@ export default async function handler(req, res) {
       throw new Error(errorText || "Browserless execution failed");
     }
 
+    const pdf = await response.arrayBuffer();
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(Buffer.from(pdf));
+
+  } catch (error) {
+    res.status(500).send("Server Error: " + error.message);
+  }
+}
     const pdf = await response.arrayBuffer();
     res.setHeader("Content-Type", "application/pdf");
     res.send(Buffer.from(pdf));
