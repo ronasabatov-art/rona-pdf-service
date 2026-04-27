@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     const { html } = req.body;
 
-    // כאן אנחנו אומרים לשרת להוריד את ה"מנוע" של הדפדפן אם הוא חסר
+    // התיקון הקריטי: הורדה ישירה של הדפדפן לשרת בזמן אמת
     const executablePath = await chromium.executablePath(
       `https://github.com/sparticuz/chromium/releases/download/v123.0.1/chromium-v123.0.1-pack.tar`
     );
