@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   try {
     const { html } = req.body;
     
-    // כאן את מדביקה את ה-API Token שקיבלת מ-Browserless
+    // ה-Token שלך כבר בפנים
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
     const response = await fetch(`https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`, {
@@ -22,7 +22,8 @@ export default async function handler(req, res) {
         options: {
           format: "A4",
           printBackground: true,
-          margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" }
+          preferCSSPageSize: true, // התיקון הקריטי: יגרום לו לכבד את הגדרות הגובה מהבייס
+          margin: { top: "0", right: "0", bottom: "0", left: "0" }
         }
       })
     });
