@@ -1,5 +1,5 @@
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -13,28 +13,24 @@ export default async function handler(req, res) {
 
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath,
       headless: chromium.headless,
-      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
     
-    // הגדרה קריטית כדי שהתמונות והפונטים ייטענו
-    await page.setContent(html, { waitUntil: "networkidle0" });
-
     const pdf = await page.pdf({
-      format: "A4",
+      format: 'A4',
       printBackground: true,
-      margin: { top: "0px", bottom: "0px", left: "0px", right: "0px" }
+      margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
     });
 
     await browser.close();
-    res.setHeader("Content-Type", "application/pdf");
+
+    res.setHeader('Content-Type', 'application/pdf');
     res.send(pdf);
   } catch (error) {
-    console.error(error);
     res.status(500).send("Error: " + error.message);
   }
 }
