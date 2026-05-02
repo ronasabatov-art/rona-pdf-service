@@ -9,21 +9,27 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // אנחנו עוברים ל-Endpoint של screenshot אבל מבקשים סוג PDF
-    // זה השילוב המנצח שמאפשר גובה אוטומטי באמת (fullPage)
-    const url = `https://production-sfo.browserless.io/screenshot?token=${BROWSERLESS_TOKEN}&type=pdf&fullPage=true`;
+    // חזרה ל-Endpoint המקורי והיציב
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
+
+    // הזרקת ה-viewport ישירות ל-HTML כדי למנוע שבירת מובייל
+    const finalHtml = `
+      <meta name="viewport" content="width=1200">
+      <style>
+        html, body { margin: 0; padding: 0; width: 210mm; }
+      </style>
+      ${html}
+    `;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: html,
-        context: {
-          viewport: {
-            width: 1200, // שומר על פריסת דסקטופ מהמובייל
-            height: 800,
-            deviceScaleFactor: 1
-          }
+        html: finalHtml,
+        options: {
+          width: '210mm',        // רוחב קבוע של A4
+          printBackground: true, // שמירה על צבעים וגרפיקה
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
     });
