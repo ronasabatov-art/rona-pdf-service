@@ -9,12 +9,9 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // חזרנו ל-URL המקורי שעובד בלי שגיאות שרת (500)
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // התיקון הקריטי: אנחנו מוסיפים תג meta ל-viewport
-    // זה מכריח את השרת לרנדר את הדף ברוחב 1200px (דסקטופ) 
-    // וכך התבנית תישמר בדיוק כמו ב-Preview, גם אם הייצוא התבצע מהנייד
+    // השארנו את ה-viewport כדי שהמובייל לא ישבור את העיצוב
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       ${html}
@@ -26,10 +23,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          format: "A4",
-          printBackground: true,
-          preferCSSPageSize: true,
-          margin: { top: "0", right: "0", bottom: "0", left: "0" }
+          width: '210mm',        // רוחב קבוע של דף A4 תקני
+          height: 'auto',       // הגובה יתארך לפי כמות הטקסט שלך (בלי חיתוך עמודים)
+          printBackground: true, // שומר על צבעי הרקע והגרפיקה שלך
+          margin: { top: 0, right: 0, bottom: 0, left: 0 } // ללא שוליים לבנים[cite: 1]
         }
       })
     });
