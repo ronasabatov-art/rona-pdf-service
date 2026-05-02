@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // השארנו את ה-viewport כדי שהמובייל לא ישבור את העיצוב
+    // שומרים על ה-viewport כדי שהמבנה לא יקרוס למובייל
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       ${html}
@@ -23,10 +23,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          width: '210mm',        // רוחב קבוע של דף A4 תקני
-          height: 'auto',       // הגובה יתארך לפי כמות הטקסט שלך (בלי חיתוך עמודים)
-          printBackground: true, // שומר על צבעי הרקע והגרפיקה שלך
-          margin: { top: 0, right: 0, bottom: 0, left: 0 } // ללא שוליים לבנים[cite: 1]
+          width: '210mm',        // רוחב קבוע של A4
+          fullPage: true,        // התיקון: זה יגיד לשרת לייצר דף אחד ארוך לפי התוכן
+          printBackground: true, // שומר על צבעי הרקע
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
     });
