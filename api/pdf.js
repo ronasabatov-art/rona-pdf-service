@@ -9,14 +9,24 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // חזרה ל-Endpoint המקורי והיציב
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // הזרקת ה-viewport ישירות ל-HTML כדי למנוע שבירת מובייל
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
-        html, body { margin: 0; padding: 0; width: 210mm; }
+        /* הגדרת דף עם גובה גמיש שמתאים את עצמו לתוכן */
+        @page { size: auto; margin: 0; }
+        html, body { 
+          margin: 0; 
+          padding: 0; 
+          width: 210mm; 
+          height: fit-content; /* הקסם כאן: הגובה נקבע לפי כמות המידע */
+          overflow: visible;
+        }
+        * { 
+          break-inside: avoid !important; 
+          page-break-inside: avoid !important; 
+        }
       </style>
       ${html}
     `;
@@ -27,8 +37,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          width: '210mm',        // רוחב קבוע של A4
-          printBackground: true, // שמירה על צבעים וגרפיקה
+          width: '210mm',
+          printBackground: true,
+          preferCSSPageSize: true, // הוראה קריטית לשרת להשתמש במידות מה-CSS ולא בברירת מחדל
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
