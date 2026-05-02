@@ -14,15 +14,13 @@ export default async function handler(req, res) {
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
-        /* הגדרת גובה גמיש ב-CSS */
         @page { size: auto; margin: 0; }
         html, body { 
           margin: 0 !important; 
           padding: 0 !important; 
           width: 210mm !important; 
-          height: auto !important; /* מאפשר לתוכן לקבוע את הגובה */
+          height: auto !important;
         }
-        /* מניעת חיתוך אלמנטים באמצע */
         * { 
           break-inside: avoid !important; 
           page-break-inside: avoid !important; 
@@ -38,9 +36,8 @@ export default async function handler(req, res) {
         html: finalHtml,
         options: {
           width: '210mm',
-          height: '5000px',      // נותנים לו "תקרה" גבוהה מאוד
+          fullPage: true,        // התיקון הקריטי: אומר לשרת למדוד את הגובה האמיתי של הדף
           printBackground: true, 
-          preferCSSPageSize: true, // ההוראה הקריטית: "תחתוך לפי הגובה האמיתי של ה-CSS"
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
