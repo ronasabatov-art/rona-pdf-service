@@ -14,13 +14,19 @@ export default async function handler(req, res) {
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
-        @page { size: auto; margin: 0; }
+        /* הגדרה קריטית לביטול חלוקת עמודים אוטומטית */
+        @page { 
+          size: auto; 
+          margin: 0; 
+        }
         html, body { 
           margin: 0 !important; 
           padding: 0 !important; 
           width: 210mm !important; 
-          height: auto !important;
+          height: fit-content !important; /* גובה דינמי לפי התוכן */
+          overflow: visible !important;
         }
+        /* מונע חיתוך של אלמנטים עיצוביים באמצע */
         * { 
           break-inside: avoid !important; 
           page-break-inside: avoid !important; 
@@ -35,9 +41,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          width: '210mm',
-          fullPage: true,        // התיקון הקריטי: אומר לשרת למדוד את הגובה האמיתי של הדף
+          width: '210mm',        // רוחב קבוע
           printBackground: true, 
+          preferCSSPageSize: true, // ההוראה להשתמש בגובה הדינמי מה-CSS
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
