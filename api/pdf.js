@@ -11,9 +11,25 @@ export default async function handler(req, res) {
 
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // שומרים על ה-viewport כדי שהמבנה לא יקרוס למובייל
     const finalHtml = `
       <meta name="viewport" content="width=1200">
+      <style>
+        /* התיקון: מגדירים גובה אוטומטי ב-CSS ולא ב-Options של השרת */
+        @page {
+          size: auto;
+          margin: 0;
+        }
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 210mm;
+          height: fit-content; /* גורם לדף להיגמר בדיוק בסוף התוכן */
+        }
+        * { 
+          break-inside: avoid !important; 
+          page-break-inside: avoid !important; 
+        }
+      </style>
       ${html}
     `;
 
@@ -23,9 +39,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          width: '210mm',        // רוחב קבוע של A4
-          fullPage: true,        // התיקון: זה יגיד לשרת לייצר דף אחד ארוך לפי התוכן
-          printBackground: true, // שומר על צבעי הרקע
+          width: '210mm',
+          printBackground: true,
+          preferCSSPageSize: true, // הוראה לשרת להשתמש בגובה שהגדרנו ב-CSS
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
