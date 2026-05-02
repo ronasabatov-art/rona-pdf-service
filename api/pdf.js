@@ -9,22 +9,36 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // התיקון הקריטי: משתמשים ב-Endpoint של screenshot עם הגדרה ל-PDF ו-fullPage
-    // זה מכריח את Puppeteer למדוד את הגובה האמיתי של הרזומה שלך
-    const url = `https://production-sfo.browserless.io/screenshot?token=${BROWSERLESS_TOKEN}&type=pdf&fullPage=true`;
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
+
+    // הזרקת viewport ומניעת שבירת עמודים ב-CSS
+    const finalHtml = `
+      <meta name="viewport" content="width=1200">
+      <style>
+        @page { size: auto; margin: 0; }
+        html, body { 
+          margin: 0 !important; 
+          padding: 0 !important; 
+          width: 210mm !important; 
+        }
+        * { 
+          break-inside: avoid !important; 
+          page-break-inside: avoid !important; 
+        }
+      </style>
+      ${html}
+    `;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: html,
-        // ה-viewport מבטיח שזה ייראה כמו דסקטופ (A4) גם אם הבקשה מהנייד
-        context: {
-          viewport: {
-            width: 1200,
-            height: 800,
-            deviceScaleFactor: 1
-          }
+        html: finalHtml,
+        options: {
+          width: '210mm',
+          height: 'auto',        // כאן הקסם: הגובה יתאים את עצמו בדיוק לתוכן
+          printBackground: true, 
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
     });
