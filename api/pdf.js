@@ -8,28 +8,24 @@ export default async function handler(req, res) {
   try {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
-
-    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`;
 
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
-        /* הגדרה קריטית לביטול חלוקת עמודים אוטומטית */
-        @page { 
-          size: auto; 
-          margin: 0; 
+        /* הגדרות להדפסת A4 נקייה */
+        @page { size: A4; margin: 0; }
+        html, body { margin: 0; padding: 0; }
+        
+        /* הקסם: מונע מהדפדפן לחתוך פסקאות או כותרות באמצע */
+        section, .experience-item, .project-item, .skill-category {
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
         }
-        html, body { 
-          margin: 0 !important; 
-          padding: 0 !important; 
-          width: 210mm !important; 
-          height: fit-content !important; /* גובה דינמי לפי התוכן */
-          overflow: visible !important;
-        }
-        /* מונע חיתוך של אלמנטים עיצוביים באמצע */
-        * { 
-          break-inside: avoid !important; 
-          page-break-inside: avoid !important; 
+
+        /* מוודא שהרקע הצבעוני של הסיידבר נמשך לכל אורך הדף */
+        .sidebar {
+          min-height: 100vh;
         }
       </style>
       ${html}
@@ -41,18 +37,12 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         html: finalHtml,
         options: {
-          width: '210mm',        // רוחב קבוע
-          printBackground: true, 
-          preferCSSPageSize: true, // ההוראה להשתמש בגובה הדינמי מה-CSS
+          format: 'A4',          // חוזרים לפורמט סטנדרטי
+          printBackground: true, // שומר על הגרפיקה
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Execution failed");
-    }
 
     const pdf = await response.arrayBuffer();
     res.setHeader("Content-Type", "application/pdf");
