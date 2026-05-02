@@ -7,15 +7,51 @@ export default async function handler(req, res) {
 
   try {
     const { html } = req.body;
-    const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
+
+    const BROWSERLESS_TOKEN =
+      "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
+
+    // ✅ עטיפה שמקבעת layout ומבטלת השפעות מובייל
+    const wrappedHtml = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body {
+      width: 1200px;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* מונע שבירה של מובייל */
+    @media (max-width: 768px) {
+      * {
+        all: unset;
+      }
+    }
+
+    /* מצב הדפסה */
+    @media print {
+      body {
+        width: 210mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  ${html}
+</body>
+</html>
+    `;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: html,
+        html: wrappedHtml,
         options: {
           format: "A4",
           printBackground: true,
