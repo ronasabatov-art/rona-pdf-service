@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // 1. הגדרות Headers (זהות לחלוטין לקוד המקורי שלך)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -7,59 +8,24 @@ export default async function handler(req, res) {
 
   try {
     const { html } = req.body;
-
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
+
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // עטיפה שמתאימה בדיוק לרוחב A4 ומונעת כיווץ
-    const wrappedHtml = `
-<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <style>
-    /* הגדרות בסיסיות למניעת שוליים ורווחים מיותרים */
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 210mm !important; /* רוחב מדויק של דף A4 */
-      height: 297mm !important; /* גובה מדויק של דף A4 */
-      overflow: hidden;
-      -webkit-print-color-adjust: exact !important;
-    }
-
-    /* ביטול רספונסיביות של מובייל בתוך ה-PDF */
-    @media (max-width: 1000px) {
-      .container, .main-layout, [class*="layout"] { 
-        display: flex !important;
-        flex-direction: row !important;
-        width: 100% !important;
-      }
-    }
-
-    /* הגדרות הדפסה נקיות */
-    @media print {
-      @page {
-        size: A4;
-        margin: 0;
-      }
-      body {
-        width: 210mm !important;
-      }
-    }
-  </style>
-</head>
-<body>
-  ${html}
-</body>
-</html>
-    `;
-
+    // 2. שליחת הבקשה עם ה"תיקון" למובייל
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: wrappedHtml,
+        html: html, // ה-HTML המקורי מבייס44
+        context: {
+          // כאן הקסם קורה: אנחנו מכריחים את השרת לפתוח דף רחב
+          viewport: {
+            width: 1200,
+            height: 1600,
+            deviceScaleFactor: 1
+          }
+        },
         options: {
           format: "A4",
           printBackground: true,
@@ -69,6 +35,7 @@ export default async function handler(req, res) {
       })
     });
 
+    // 3. טיפול בתגובה (זהה לחלוטין לקוד המקורי שלך)
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Execution failed");
