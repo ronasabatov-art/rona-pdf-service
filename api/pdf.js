@@ -9,22 +9,25 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // הכתובת של השירות החיצוני
+    // אנחנו מזריקים סטייל שפשוט מבטל את הרספונסיביות של המובייל
+    // זה גורם ל-HTML לחשוב שהוא תמיד על מסך רחב
+    const fixedHtml = `
+      <style>
+        html, body { 
+          min-width: 1200px !important; 
+          zoom: 0.75; /* עוזר להתאים את התצוגה הרחבה לדף A4 */
+        }
+      </style>
+      ${html}
+    `;
+
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: html,
-        // זה החלק שמוודא שגם במובייל זה ייראה כמו במחשב:
-        context: {
-          viewport: {
-            width: 1200, // רוחב של מסך מחשב
-            height: 1600,
-            deviceScaleFactor: 1
-          }
-        },
+        html: fixedHtml, // משתמשים ב-HTML עם התיקון
         options: {
           format: "A4",
           printBackground: true,
