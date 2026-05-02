@@ -9,9 +9,10 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
+    // אנחנו משתמשים ב-content endpoint שמאפשר לנו להגדיר גובה ידני ב-options
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
-    // הזרקת viewport ומניעת שבירת עמודים ב-CSS
+    // הזרקת CSS שמוודא שאין רווחים מיותרים ומבטל חיתוכי עמודים
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
@@ -21,6 +22,7 @@ export default async function handler(req, res) {
           padding: 0 !important; 
           width: 210mm !important; 
         }
+        /* מונע חיתוך אלמנטים גרפיים באמצע המסמך */
         * { 
           break-inside: avoid !important; 
           page-break-inside: avoid !important; 
@@ -36,8 +38,9 @@ export default async function handler(req, res) {
         html: finalHtml,
         options: {
           width: '210mm',
-          height: 'auto',        // כאן הקסם: הגובה יתאים את עצמו בדיוק לתוכן
-          printBackground: true, 
+          printBackground: true,
+          // במקום 'auto' שגרם לשגיאה, אנחנו מבקשים מהשרת להשתמש בגובה ה-CSS
+          preferCSSPageSize: true,[cite: 1]
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
