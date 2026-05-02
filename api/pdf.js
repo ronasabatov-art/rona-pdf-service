@@ -11,18 +11,23 @@ export default async function handler(req, res) {
 
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
 
+    // הזרקת ה-viewport לטיפול במובייל ו-CSS לגובה אוטומטי
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
-        /* הגדרת דף עם גובה גמיש שמתאים את עצמו לתוכן */
-        @page { size: auto; margin: 0; }
-        html, body { 
+        /* ביטול חלוקה לדפים והגדרת גובה גמיש */
+        @page { 
+          size: auto; 
           margin: 0; 
-          padding: 0; 
-          width: 210mm; 
-          height: fit-content; /* הקסם כאן: הגובה נקבע לפי כמות המידע */
-          overflow: visible;
         }
+        html, body { 
+          margin: 0 !important; 
+          padding: 0 !important; 
+          width: 210mm !important; 
+          height: auto !important;
+          min-height: auto !important;
+        }
+        /* מניעת חיתוך אלמנטים באמצע */
         * { 
           break-inside: avoid !important; 
           page-break-inside: avoid !important; 
@@ -39,7 +44,8 @@ export default async function handler(req, res) {
         options: {
           width: '210mm',
           printBackground: true,
-          preferCSSPageSize: true, // הוראה קריטית לשרת להשתמש במידות מה-CSS ולא בברירת מחדל
+          // הקסם: אומר לשרת להשתמש בגובה האוטומטי שהגדרנו ב-CSS ולא ב-A4 קשיח
+          preferCSSPageSize: true,[cite: 1]
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
