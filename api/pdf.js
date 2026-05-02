@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // הגדרות אבטחה כדי למנוע שגיאות Fetch מהדפדפן
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -7,33 +8,36 @@ export default async function handler(req, res) {
 
   try {
     const { html } = req.body;
+    if (!html) throw new Error("Missing HTML content");
+
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`;
 
-    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
-
-    // הזרקת ה-viewport לטיפול במובייל ו-CSS לגובה אוטומטי
+    // הזרקת הגדרות Viewport וביטול חלוקה לעמודים ב-CSS
     const finalHtml = `
-      <meta name="viewport" content="width=1200">
-      <style>
-        /* ביטול חלוקה לדפים והגדרת גובה גמיש */
-        @page { 
-          size: auto; 
-          margin: 0; 
-        }
-        html, body { 
-          margin: 0 !important; 
-          padding: 0 !important; 
-          width: 210mm !important; 
-          height: auto !important;
-          min-height: auto !important;
-        }
-        /* מניעת חיתוך אלמנטים באמצע */
-        * { 
-          break-inside: avoid !important; 
-          page-break-inside: avoid !important; 
-        }
-      </style>
-      ${html}
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=1200">
+        <style>
+          @page { size: auto; margin: 0; }
+          html, body { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            width: 210mm !important; 
+            height: auto !important;
+          }
+          * { 
+            break-inside: avoid !important; 
+            page-break-inside: avoid !important; 
+          }
+        </style>
+      </head>
+      <body>
+        ${html}
+      </body>
+      </html>
     `;
 
     const response = await fetch(url, {
@@ -44,8 +48,7 @@ export default async function handler(req, res) {
         options: {
           width: '210mm',
           printBackground: true,
-          // הקסם: אומר לשרת להשתמש בגובה האוטומטי שהגדרנו ב-CSS ולא ב-A4 קשיח
-          preferCSSPageSize: true,[cite: 1]
+          preferCSSPageSize: true, // אומר לשרת להיצמד לגובה האוטומטי מה-CSS
           margin: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       })
@@ -53,7 +56,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || "Execution failed");
+      throw new Error(`Browserless Error: ${errorText}`);
     }
 
     const pdf = await response.arrayBuffer();
@@ -61,6 +64,7 @@ export default async function handler(req, res) {
     res.send(Buffer.from(pdf));
 
   } catch (error) {
-    res.status(500).send("Server Error: " + error.message);
+    console.error("API Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 }
