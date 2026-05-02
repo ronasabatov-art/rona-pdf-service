@@ -9,15 +9,22 @@ export default async function handler(req, res) {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
 
-    // התיקון כאן: הוספנו width=1280 ו-type=pdf לכתובת
-    // זה מכריח את השרת להתנהג כמו מחשב, לא משנה מאיפה לחצת
-    const url = `https://production-sfo.browserless.io/screenshot?token=${BROWSERLESS_TOKEN}&width=1280&height=1600&type=pdf&waitUntil=networkidle0`;
+    // חזרנו ל-URL המקורי שעובד בלי שגיאות שרת (500)
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&waitUntil=networkidle0`;
+
+    // התיקון הקריטי: אנחנו מוסיפים תג meta ל-viewport
+    // זה מכריח את השרת לרנדר את הדף ברוחב 1200px (דסקטופ) 
+    // וכך התבנית תישמר בדיוק כמו ב-Preview, גם אם הייצוא התבצע מהנייד
+    const finalHtml = `
+      <meta name="viewport" content="width=1200">
+      ${html}
+    `;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        html: html,
+        html: finalHtml,
         options: {
           format: "A4",
           printBackground: true,
