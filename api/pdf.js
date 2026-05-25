@@ -1,4 +1,6 @@
- export default async function handler(req, res) {
+  import { PDFDocument } from 'pdf-lib';
+
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -8,10 +10,9 @@
   try {
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
-    
-    // אופטימיזציה נוספת: הגבלת איכות הרינדור ל-50 והפחתת פרופיל הצבע (ביטול lossless) ישירות ב-URL
-    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&--losslessCompression=false&--optimizeFonts=true&--pdfQuality=50`;
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`;
 
+    // ה-HTML וה-CSS המקוריים והנקיים שלך - ללא שום שינוי פונטים או עיצוב!
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
@@ -29,15 +30,6 @@
           break-inside: avoid !important;
           page-break-inside: avoid !important;
         }
-        
-        /* הסרת אלמנטים כבדים ברינדור כרום (כמו צלליות ואפקטים מורכבים) */
-        * {
-          text-rendering: optimizeLegibility !important;
-          -webkit-font-smoothing: antialiased !important;
-          box-shadow: none !important; 
-          text-shadow: none !important;
-        }
-        
         .sidebar {
           min-height: 100vh;
         }
@@ -45,6 +37,7 @@
       ${html}
     `;
 
+    // 1. הפקת ה-PDF המקורי דרך Browserless כפי שהיה תמיד
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,18 +57,33 @@
       throw new Error(errorText || "Execution failed");
     }
 
-    const pdf = await response.arrayBuffer();
+    const originalPdfBuffer = await response.arrayBuffer();
+    let finalPdfBuffer = Buffer.from(originalPdfBuffer);
     
-    // בדיקה מול מגבלת 2MB של לינקדאין
-    const fileSizeInMB = pdf.byteLength / (1024 * 1024);
-    if (fileSizeInMB > 2) {
+    // חישוב המשקל המקורי של הקובץ שנוצר
+    const originalSizeInMB = finalPdfBuffer.byteLength / (1024 * 1024);
+
+    // 2. מנגנון הגנה: אם הקובץ שנוצר גדול מ-2MB, נפעיל דחיסה אוטומטית מבנית
+    if (originalSizeInMB > 2) {
+      // טעינת ה-PDF לתוך pdf-lib
+      const pdfDoc = await PDFDocument.load(originalPdfBuffer);
+      
+      // שמירה מחדש תוך שימוש ב-Object Streams שמכווץ ומייעל את המבנה הפנימי והפונטים של ה-PDF
+      const compressedPdfBytes = await pdfDoc.save({ useObjectStreams: true });
+      finalPdfBuffer = Buffer.from(compressedPdfBytes);
+    }
+
+    // בדיקה סופית לאחר הדחיסה לוודא שעמדנו ביעד עבור לינקדאין
+    const finalSizeInMB = finalPdfBuffer.byteLength / (1024 * 1024);
+    if (finalSizeInMB > 2) {
       return res.status(413).json({ 
-        error: `קובץ ה-PDF נוצר בהצלחה אך משקלו (${fileSizeInMB.toFixed(2)}MB) חורג מה-2MB המותרים בלינקדאין.` 
+        error: `גם לאחר דחיסה אוטומטית, משקל הקובץ (${finalSizeInMB.toFixed(2)}MB) גדול מ-2MB. יש להקטין את קובץ תמונת הפרופיל המקורית.` 
       });
     }
 
+    // 3. שליחת קובץ ה-PDF המוכן והתקין למשתמש
     res.setHeader("Content-Type", "application/pdf");
-    res.send(Buffer.from(pdf));
+    res.send(finalPdfBuffer);
 
   } catch (error) {
     res.status(500).json({ error: error.message });
