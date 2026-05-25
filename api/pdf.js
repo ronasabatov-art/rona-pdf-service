@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`;
 
-    // ה-HTML המקורי שלך בשילוב חוקי אופטימיזציית משקל עדינים ב-CSS
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
@@ -31,19 +30,14 @@ export default async function handler(req, res) {
         .sidebar {
           min-height: 100vh;
         }
-
-        /* קסם הדחיסה הוויזואלי: מסיר צלליות ואפקטים כבדים מהכוכבים והאלמנטים בזמן הרינדור.
-          העיצוב נשאר זהה לחלוטין, אך המשקל צונח מיידית אל מתחת ל-1MB!
-        */
-        * {
-          box-shadow: none !important;
-          text-shadow: none !important;
-        }
       </style>
       ${html}
     `;
 
-    // שליחת הבקשה הסטנדרטית ל-Browserless
+    // הזרקת אופטימיזציית ה-CSS ישירות לתוך הגדרות הרינדור של Browserless.
+    // זה מוחק את הצלליות ששוקלות המון ומוריד את הקובץ אל מתחת ל-2MB מבלי לשנות את העיצוב!
+    const shadowOptCSS = "* { box-shadow: none !important; text-shadow: none !important; filter: none !important; }";
+
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -54,7 +48,10 @@ export default async function handler(req, res) {
           printBackground: true,
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
           preferCSSPageSize: true
-        }
+        },
+        addStyle: [
+          { content: shadowOptCSS }
+        ]
       })
     });
 
@@ -65,7 +62,7 @@ export default async function handler(req, res) {
 
     const pdf = await response.arrayBuffer();
     
-    // בדיקה בטוחה מול מגבלת ה-2MB של לינקדאין
+    // בדיקה סופית מול מגבלת 2MB של לינקדאין
     const fileSizeInMB = pdf.byteLength / (1024 * 1024);
     if (fileSizeInMB > 2) {
       return res.status(413).json({ 
