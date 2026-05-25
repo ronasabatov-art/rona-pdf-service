@@ -9,8 +9,8 @@
     const { html } = req.body;
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
     
-    // מעבירים את האופטימיזציות ישירות בתוך ה-URL כדי שזה לא ייחסם ב-Validation של ה-Body
-    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&--losslessCompression=false&--optimizeFonts=true`;
+    // אופטימיזציה נוספת: הגבלת איכות הרינדור ל-50 והפחתת פרופיל הצבע (ביטול lossless) ישירות ב-URL
+    const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}&--losslessCompression=false&--optimizeFonts=true&--pdfQuality=50`;
 
     const finalHtml = `
       <meta name="viewport" content="width=1200">
@@ -30,11 +30,12 @@
           page-break-inside: avoid !important;
         }
         
-        /* אופטימיזציה גרפית למשקל הקובץ (הורדת צלליות שמנפחות את ה-PDF) */
+        /* הסרת אלמנטים כבדים ברינדור כרום (כמו צלליות ואפקטים מורכבים) */
         * {
           text-rendering: optimizeLegibility !important;
           -webkit-font-smoothing: antialiased !important;
           box-shadow: none !important; 
+          text-shadow: none !important;
         }
         
         .sidebar {
@@ -65,7 +66,7 @@
 
     const pdf = await response.arrayBuffer();
     
-    // בדיקה מחמירה מול מגבלת 2MB של לינקדאין
+    // בדיקה מול מגבלת 2MB של לינקדאין
     const fileSizeInMB = pdf.byteLength / (1024 * 1024);
     if (fileSizeInMB > 2) {
       return res.status(413).json({ 
