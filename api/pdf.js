@@ -1,4 +1,5 @@
-  import { PDFDocument } from 'pdf-lib';
+// טעינת הספרייה ישירות מהאינטרנט - חוסך התקנות ב-Base44
+import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     const BROWSERLESS_TOKEN = "2UPZhQ7nEbXV6fG63fcc5e9df3bfacbe8248ebf7b5c0bfd77";
     const url = `https://production-sfo.browserless.io/pdf?token=${BROWSERLESS_TOKEN}`;
 
-    // ה-HTML וה-CSS המקוריים והנקיים שלך - ללא שום שינוי פונטים או עיצוב!
+    // ה-HTML וה-CSS המקוריים והנקיים שלך - ללא שום שינוי בעיצוב
     const finalHtml = `
       <meta name="viewport" content="width=1200">
       <style>
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
       ${html}
     `;
 
-    // 1. הפקת ה-PDF המקורי דרך Browserless כפי שהיה תמיד
+    // 1. הפקת ה-PDF המקורי מ-Browserless
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,28 +61,30 @@ export default async function handler(req, res) {
     const originalPdfBuffer = await response.arrayBuffer();
     let finalPdfBuffer = Buffer.from(originalPdfBuffer);
     
-    // חישוב המשקל המקורי של הקובץ שנוצר
     const originalSizeInMB = finalPdfBuffer.byteLength / (1024 * 1024);
 
-    // 2. מנגנון הגנה: אם הקובץ שנוצר גדול מ-2MB, נפעיל דחיסה אוטומטית מבנית
+    // 2. מנגנון הגנה: דחיסה אופטימלית אגרסיבית יותר אם הקובץ עובר את ה-2MB
     if (originalSizeInMB > 2) {
-      // טעינת ה-PDF לתוך pdf-lib
       const pdfDoc = await PDFDocument.load(originalPdfBuffer);
       
-      // שמירה מחדש תוך שימוש ב-Object Streams שמכווץ ומייעל את המבנה הפנימי והפונטים של ה-PDF
-      const compressedPdfBytes = await pdfDoc.save({ useObjectStreams: true });
+      // שמירה עם הגדרות תתי-קבוצות לפונטים ואיחוד אובייקטים (ללא פגיעה ויזואלית)
+      const compressedPdfBytes = await pdfDoc.save({ 
+        useObjectStreams: true,
+        addGlyphsToSubsets: true,
+        updateFieldAppearances: false
+      });
       finalPdfBuffer = Buffer.from(compressedPdfBytes);
     }
 
-    // בדיקה סופית לאחר הדחיסה לוודא שעמדנו ביעד עבור לינקדאין
+    // בדיקה סופית מול מגבלת 2MB של לינקדאין
     const finalSizeInMB = finalPdfBuffer.byteLength / (1024 * 1024);
     if (finalSizeInMB > 2) {
       return res.status(413).json({ 
-        error: `גם לאחר דחיסה אוטומטית, משקל הקובץ (${finalSizeInMB.toFixed(2)}MB) גדול מ-2MB. יש להקטין את קובץ תמונת הפרופיל המקורית.` 
+        error: `גם לאחר דחיסה אוטומטית משודרגת, משקל הקובץ (${finalSizeInMB.toFixed(2)}MB) גדול מ-2MB.` 
       });
     }
 
-    // 3. שליחת קובץ ה-PDF המוכן והתקין למשתמש
+    // 3. שליחת קובץ ה-PDF הדחוס והמוכן למשתמש
     res.setHeader("Content-Type", "application/pdf");
     res.send(finalPdfBuffer);
 
